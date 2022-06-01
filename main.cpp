@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <termios.h>
 #include <vector>
 
 using namespace std;
@@ -27,7 +28,9 @@ string logo2048 =
     "\\_    \\/_> _ <_\n   // /_\\ \\   \\ \\ \\_\\ \\   \\ \\__ ,__\\    "
     "/\\ \\L\\ \\\n  /\\______/    \\ \\____/    \\/_/\\_\\_/    \\ "
     "\\____/\n  \\/_____/      \\/___/        \\/_/       \\/___/\n";
-string plgame = "  W or K => Up\n  A or H => Left\n  S or J => Down\n  D or L => Right\n  Q or q => Quit\n\nPress the keys to start and continue.\n";
+string plgame = "  W or K or ↑ Up\n  A or H or ← => Left\n  S or J or ↓ => "
+                "Down\n  D or L or → => Right\n  Q or esc => Quit\n\nPress the "
+                "keys to start and continue.\n";
 
 void print_board() {
     //打印整个棋盘，数字用ANSI转义序列输出不同的颜色
@@ -93,106 +96,127 @@ void add_element() {
     }
 }
 
+//实时监听终端输入
+int scanKeyboard() {
+    int in;
+    struct termios new_settings;
+    struct termios stored_settings;
+    //设置终端参数
+    tcgetattr(0, &stored_settings);
+    new_settings = stored_settings;
+    new_settings.c_lflag &= (~ICANON);
+    new_settings.c_cc[VTIME] = 0;
+    tcgetattr(0, &stored_settings);
+    new_settings.c_cc[VMIN] = 1;
+    tcsetattr(0, TCSANOW, &new_settings);
+    in = getchar();
+    tcsetattr(0, TCSANOW, &stored_settings);
+    return in;
+}
+
 void go_right() {
     for (int i = 0; i < 4; i++) {
-        for (int j = 3; j > 0; j--) {
-            if (nums[i][j] == nums[i][j - 1]) {
-                nums[i][j] *= 2;
-                nums[i][j - 1] = 0;
+        vector<int> ve;
+        for (int j = 3; j >= 0; j--) {
+            if (nums[i][j] != 0) ve.push_back(nums[i][j]);
+        }
+        vector<int> tmp;
+        if (ve.size() != 0) {
+            for (int j = 0; j < ve.size(); j++) {
+                if (j + 1 < ve.size() && ve[j] == ve[j + 1]) {
+                    tmp.push_back(ve[j] * 2);
+                    j++;
+                }
+                else tmp.push_back(ve[j]);
             }
         }
-        vector<int> ve;
-        for (int j = 0; j < 4; j++) {
-            if (nums[i][j] != 0)
-                ve.push_back(nums[i][j]);
-        }
-        int k = 3;
-        for (int j = ve.size() - 1; j >= 0; j--) {
-            nums[i][k] = ve[j];
-            k--;
-        }
-        for (int j = 0; j < k; j++)
-            nums[i][j] = 0;
+        for (int j = 0; j < 4; j++) tmp.push_back(0);
+        reverse(tmp.begin(), tmp.begin() + 4);
+        for (int j = 0; j < 4; j++) nums[i][j] = tmp[j];
     }
 }
 
 void go_left() {
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (nums[i][j] == nums[i][j + 1]) {
-                nums[i][j] *= 2;
-                nums[i][j + 1] = 0;
-            }
-        }
         vector<int> ve;
         for (int j = 0; j < 4; j++) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
         }
-        int k = 0;
-        for (int j = 0; j < ve.size(); j++) {
-            nums[i][k] = ve[j];
-            k++;
+        vector<int> tmp;
+        if (ve.size() != 0) {
+            for (int j = 0; j < ve.size(); j++) {
+                if (j + 1 < ve.size() && ve[j] == ve[j + 1]) {
+                    tmp.push_back(ve[j] * 2);
+                    j++;
+                } else
+                    tmp.push_back(ve[j]);
+            }
         }
-        for (int j = k; j < 4; j++)
-            nums[i][j] = 0;
+        for (int j = 0; j < 4; j++)
+            tmp.push_back(0);
+        for (int j = 0; j < 4; j++)
+            nums[i][j] = tmp[j];
     }
 }
 
 void go_up() {
     for (int j = 0; j < 4; j++) {
-        for (int i = 0; i < 3; i++) {
-            if (nums[i][j] == nums[i + 1][j]) {
-                nums[i][j] *= 2;
-                nums[i + 1][j] = 0;
-            }
-        }
         vector<int> ve;
         for (int i = 0; i < 4; i++) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
         }
-        int k = 0;
-        for (int i = 0; i < ve.size(); i++) {
-            nums[k][j] = ve[i];
-            k++;
+        vector<int> tmp;
+        if (ve.size() != 0) {
+            for (int i = 0; i < ve.size(); i++) {
+                if (i + 1 < ve.size() && ve[i] == ve[i + 1]) {
+                    tmp.push_back(ve[i] * 2);
+                    i++;
+                } else
+                    tmp.push_back(ve[i]);
+            }
         }
-        for (int i = k; i < 4; i++)
-            nums[i][j] = 0;
+        for (int i = 0; i < 4; i++)
+            tmp.push_back(0);
+        for (int i = 0; i < 4; i++)
+            nums[i][j] = tmp[i];
     }
 }
 
 void go_down() {
     for (int j = 0; j < 4; j++) {
-        for (int i = 3; i > 0; i--) {
-            if (nums[i][j] == nums[i - 1][j]) {
-                nums[i][j] *= 2;
-                nums[i - 1][j] = 0;
-            }
-        }
         vector<int> ve;
         for (int i = 3; i >= 0; i--) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
         }
-        int k = 3;
-        for (int i = 0; i < ve.size(); i++) {
-            nums[k][j] = ve[i];
-            k--;
+        vector<int> tmp;
+        if (ve.size() != 0) {
+            for (int i = 0; i < ve.size(); i++) {
+                if (i + 1 < ve.size() && ve[i] == ve[i + 1]) {
+                    tmp.push_back(ve[i] * 2);
+                    i++;
+                } else
+                    tmp.push_back(ve[i]);
+            }
         }
-        for (int i = 0; i < k; i++)
-            nums[i][j] = 0;
+        for (int i = 0; i < 4; i++)
+            tmp.push_back(0);
+        reverse(tmp.begin(), tmp.begin() + 4);
+        for (int i = 0; i < 4; i++)
+            nums[i][j] = tmp[i];
     }
 }
 
-void change_board(char c) {
-    if (c == 'w')
+void change_board(int c) {
+    if (c == 'w' || c == 'k')
         go_up();
-    else if (c == 's')
+    else if (c == 's' || c == 'j')
         go_down();
-    else if (c == 'a')
+    else if (c == 'a' || c == 'h')
         go_left();
-    else if (c == 'd')
+    else if (c == 'd' || c == 'l')
         go_right();
 }
 
@@ -230,13 +254,25 @@ int check_status() {
 }
 
 void play_game() {
-    if (check_status() == 0)
-        cout << "game over.\n";
-    else if (check_status() == 2)
-        cout << "You win!!!\n";
-    else {
-        cout << logo2048 << "\n";
-        cout << "请输入w(上), s(下), a(左), d(右)：\n";
+    while (1) {
+        int c = scanKeyboard();
+        if (c == 'q' || c == 'Q')
+            return;
+        change_board(c);
+        int status = check_status();
+        system("clear");
+        if (status == 0) {
+            cout << "Game over!\n";
+            return;
+        } else if (status == 2) {
+            cout << "You win!!!\n";
+            return;
+        } else {
+            add_element();
+            cout << GREEN1 << logo2048 << NC << "\n";
+            print_board();
+            cout << "\n" << plgame;
+        }
     }
 }
 
@@ -246,6 +282,7 @@ int main() {
     cout << GREEN1 << logo2048 << NC << "\n";
     print_board();
     cout << "\n" << plgame;
+    play_game();
 
     return 0;
 }
