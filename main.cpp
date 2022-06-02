@@ -28,8 +28,8 @@ string logo2048 =
     "\\_    \\/_> _ <_\n   // /_\\ \\   \\ \\ \\_\\ \\   \\ \\__ ,__\\    "
     "/\\ \\L\\ \\\n  /\\______/    \\ \\____/    \\/_/\\_\\_/    \\ "
     "\\____/\n  \\/_____/      \\/___/        \\/_/       \\/___/\n";
-string plgame = "  W or K or ↑ Up\n  A or H or ← => Left\n  S or J or ↓ => "
-                "Down\n  D or L or → => Right\n  Q or esc => Quit\n\nPress the "
+string plgame = "  W or K => Up\n  A or H => Left\n  S or J => "
+                "Down\n  D or L => Right\n  Q or esc => Quit\n\nPress the "
                 "keys to start and continue.\n";
 
 void print_board() {
@@ -59,6 +59,8 @@ void print_board() {
             else if (a == 512)
                 cout << "┃   " << MAGENTA2 << a << NC << "  ";
             else if (a == 1024)
+                cout << "┃  " << CYAN2 << a << NC << "  ";
+            else if (a == 2048)
                 cout << "┃  " << RED2 << a << NC << "  ";
         }
         cout << "┃\n";
@@ -115,10 +117,14 @@ int scanKeyboard() {
 }
 
 void go_right() {
+    bool fl = 0;
     for (int i = 0; i < 4; i++) {
         vector<int> ve;
         for (int j = 3; j >= 0; j--) {
-            if (nums[i][j] != 0) ve.push_back(nums[i][j]);
+            if (nums[i][j] != 0)
+                ve.push_back(nums[i][j]);
+            if (j + 1 < 4 && nums[i][j + 1] == 0 && nums[i][j] != 0)
+                fl = 1;
         }
         vector<int> tmp;
         if (ve.size() != 0) {
@@ -126,22 +132,30 @@ void go_right() {
                 if (j + 1 < ve.size() && ve[j] == ve[j + 1]) {
                     tmp.push_back(ve[j] * 2);
                     j++;
-                }
-                else tmp.push_back(ve[j]);
+                    fl = 1;
+                } else
+                    tmp.push_back(ve[j]);
             }
         }
-        for (int j = 0; j < 4; j++) tmp.push_back(0);
+        for (int j = 0; j < 4; j++)
+            tmp.push_back(0);
         reverse(tmp.begin(), tmp.begin() + 4);
-        for (int j = 0; j < 4; j++) nums[i][j] = tmp[j];
+        for (int j = 0; j < 4; j++)
+            nums[i][j] = tmp[j];
     }
+    if (fl)
+        add_element();
 }
 
 void go_left() {
+    bool fl = 0;
     for (int i = 0; i < 4; i++) {
         vector<int> ve;
         for (int j = 0; j < 4; j++) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
+            if (j + 1 < 4 && nums[i][j] == 0 && nums[i][j + 1] != 0)
+                fl = 1;
         }
         vector<int> tmp;
         if (ve.size() != 0) {
@@ -149,6 +163,7 @@ void go_left() {
                 if (j + 1 < ve.size() && ve[j] == ve[j + 1]) {
                     tmp.push_back(ve[j] * 2);
                     j++;
+                    fl = 1;
                 } else
                     tmp.push_back(ve[j]);
             }
@@ -158,14 +173,19 @@ void go_left() {
         for (int j = 0; j < 4; j++)
             nums[i][j] = tmp[j];
     }
+    if (fl)
+        add_element();
 }
 
 void go_up() {
+    bool fl = 0;
     for (int j = 0; j < 4; j++) {
         vector<int> ve;
         for (int i = 0; i < 4; i++) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
+            if (i + 1 < 4 && nums[i][j] == 0 && nums[i + 1][j] != 0)
+                fl = 1;
         }
         vector<int> tmp;
         if (ve.size() != 0) {
@@ -173,6 +193,7 @@ void go_up() {
                 if (i + 1 < ve.size() && ve[i] == ve[i + 1]) {
                     tmp.push_back(ve[i] * 2);
                     i++;
+                    fl = 1;
                 } else
                     tmp.push_back(ve[i]);
             }
@@ -182,14 +203,19 @@ void go_up() {
         for (int i = 0; i < 4; i++)
             nums[i][j] = tmp[i];
     }
+    if (fl)
+        add_element();
 }
 
 void go_down() {
+    bool fl = 0;
     for (int j = 0; j < 4; j++) {
         vector<int> ve;
         for (int i = 3; i >= 0; i--) {
             if (nums[i][j] != 0)
                 ve.push_back(nums[i][j]);
+            if (i - 1 >= 0 && nums[i - 1][j] == 0 && nums[i][j] != 0)
+                fl = 1;
         }
         vector<int> tmp;
         if (ve.size() != 0) {
@@ -197,6 +223,7 @@ void go_down() {
                 if (i + 1 < ve.size() && ve[i] == ve[i + 1]) {
                     tmp.push_back(ve[i] * 2);
                     i++;
+                    fl = 1;
                 } else
                     tmp.push_back(ve[i]);
             }
@@ -207,16 +234,18 @@ void go_down() {
         for (int i = 0; i < 4; i++)
             nums[i][j] = tmp[i];
     }
+    if (fl)
+        add_element();
 }
 
 void change_board(int c) {
-    if (c == 'w' || c == 'k')
+    if (c == 'w' || c == 'k' || c == 38)
         go_up();
-    else if (c == 's' || c == 'j')
+    else if (c == 's' || c == 'j' || c == 40)
         go_down();
-    else if (c == 'a' || c == 'h')
+    else if (c == 'a' || c == 'h' || c == 37)
         go_left();
-    else if (c == 'd' || c == 'l')
+    else if (c == 'd' || c == 'l' || c == 39)
         go_right();
 }
 
@@ -261,27 +290,26 @@ void play_game() {
         change_board(c);
         int status = check_status();
         system("clear");
+        cout << GREEN1 << logo2048 << NC << "\n\n";
+        print_board();
         if (status == 0) {
-            cout << "Game over!\n";
+            cout << RED1 << "\nGAME OVER! YOU LOSE-\n";
             return;
         } else if (status == 2) {
-            cout << "You win!!!\n";
+            cout << YELLOW2 << "\nYOU WIN!!!\n";
             return;
-        } else {
-            add_element();
-            cout << GREEN1 << logo2048 << NC << "\n";
-            print_board();
-            cout << "\n" << plgame;
         }
+        cout << "\n" << plgame << NC;
     }
 }
 
 int main() {
     srand((unsigned)time(NULL));
+    system("clear");
     add_element();
-    cout << GREEN1 << logo2048 << NC << "\n";
+    cout << GREEN1 << logo2048 << NC << "\n\n";
     print_board();
-    cout << "\n" << plgame;
+    cout << "\n" << plgame << NC;
     play_game();
 
     return 0;
